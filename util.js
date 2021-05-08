@@ -1,5 +1,32 @@
 import fs from "fs";
 
+const filteredKeys = [
+  "rank",
+  "id",
+  "mallProductId",
+  "mallName",
+  "productName",
+  "productTitle",
+  "price",
+  "category1Id",
+  "category2Id",
+  "category3Id",
+  "category1Name",
+  "category2Name",
+  "category3Name",
+  "maker",
+  "brandNo",
+  "attributeValue",
+  "characterValue",
+  "atmtTag",
+  "lowMallList",
+];
+
+const getMappingItem = (item) => {
+  const mapped = filteredKeys.reduce((obj, key) => ({ ...obj, [key]: item[key] }), {});
+  console.log(item?.imageUrl);
+};
+
 const tsvToJSON = (tsv_string) => {
   const rows = tsv_string.split("\n");
   const jsonArray = [];
@@ -21,4 +48,4 @@ const getFile = (file_path) => {
   return tsvToJSON(string_tsv);
 };
 
-export { tsvToJSON, getFile };
+export { getFile, getMappingItem };
