@@ -1,9 +1,9 @@
 // 1. node.js의 fs모듈 추출
 import puppeteer from "puppeteer";
-import { getFile, getMappingItem } from "./util.js";
+import { writeResultFile, getFile, getMappingItem, getTotal } from "./util.js";
 
 const FILE_PATH = "./lotteimall_sampling_3000.tsv000";
-
+const TEST_NUMBER = 50;
 const inputs = getFile(FILE_PATH);
 
 let result = [];
@@ -12,7 +12,7 @@ let result = [];
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < TEST_NUMBER; i++) {
     let resultObj = {};
     resultObj.itemName = inputs[i].itemName;
     resultObj.itemID = inputs[i].itemID;
@@ -33,9 +33,13 @@ let result = [];
 
     /* 각 페이지 크롤링 끝 */
     result.push(resultObj);
+
+    console.log(`${i} END! total ${TEST_NUMBER}`);
   }
   await browser.close();
   // console.log(result);
+  await writeResultFile(result);
+  console.log("ALL END");
 })();
 
 const getSearchData = async (page) => {
@@ -52,22 +56,14 @@ const getSearchData = async (page) => {
   const searchProducts = parsedScript.props.pageProps.initialState.products;
 
   const resultList = searchProducts.list;
-  let resultLength = searchProducts.total;
-
-  resultLength = getTotal(resultLength);
+  const resultLength = getTotal(searchProducts.total);
 
   for (let i = 0; i < resultLength; ++i) {
-    searchResultObj.push(getMappingItem(resultList[i].item));
+    searchResultObj.push(await getMappingItem(resultList[i].item));
   }
 
   return searchResultObj;
 };
-
-const getTotal = (total) => {
-  if (total <= 40) return total;
-  else return 40; //각 검색어 크롤링 데이터 갯수 제한
-};
-
 
 // const pageDown = async (page) => {
 //   const scrollDelay = 1000;
