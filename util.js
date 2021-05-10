@@ -1,5 +1,10 @@
 import fs from "fs";
 import Jimp from "jimp";
+// import shell from "shelljs";
+import util from "util";
+import { exec } from "child_process";
+
+const asyncExec = util.promisify(exec);
 
 const filteredKeys = [
   "rank",
@@ -23,22 +28,22 @@ const filteredKeys = [
   "lowMallList",
 ];
 
-const IMG_SIZE = "140";
+const IMG_SIZE = "40";
 const MAX_ITEM_SIZE = 40;
 
-const getMappingItem = async (item) => {
+const getMappingItem = async (item, i) => {
   const mapped = filteredKeys.reduce(
     (obj, key) => ({ ...obj, [key]: item[key] }),
     {}
   );
 
   if (item?.imageUrl) {
-    const imgRGB = await covertImageToRGb(
-      item?.imageUrl + "?type=f" + IMG_SIZE
-    );
+    const imgRGB = await covertImageToRGb(item.imageUrl + "?type=f" + IMG_SIZE);
+    // console.log(i, item.imageUrl + "?type=f" + IMG_SIZE);
     mapped.imgRGB = imgRGB;
     // mapped.imgRGB = null;
   } else {
+    console.error("imageUrl not found");
     mapped.imgRGB = null;
   }
   return mapped;
@@ -71,7 +76,7 @@ const covertImageToRGb = async (imgUrl) => {
       );
     })
     .catch((err) => {
-      console.log("img convert error, ", err);
+      console.error("img convert error, ", err);
       imgRGB = [];
     });
 
@@ -93,6 +98,18 @@ const tsvToJSON = (tsv_string) => {
   return jsonArray;
 };
 
+const changeTorIP = async () => {
+  // await shell.exec("brew services restart tor");
+  // await execShellCommand("brew services restart tor");
+  try {
+    let res= await asyncExec("brew services restart tor");
+    let ip = await asyncExec("curl -s --socks5-hostname 127.0.0.1:9050 https://api.myip.com");
+    console.log("IP Changed", res, ip);
+  } catch (e) {
+    console.error("IP Change Error");
+  }
+};
+
 const getFile = (file_path) => {
   const file_tsv = fs.readFileSync(file_path);
   const string_tsv = file_tsv.toString();
@@ -109,4 +126,30 @@ const writeResultFile = (result) => {
 
   fs.writeFileSync("result.json", resultJSON);
 };
-export { writeResultFile, getFile, getMappingItem, getTotal };
+
+const getRank = (rank) => {
+  //input : string
+  let _rank = rank.replace(/,/g, "");
+  return parseInt(_rank) > 40 ? 40 : parseInt(_rank);
+};
+
+function execShellCommand(cmd) {
+  const exec = require("child_process").exec;
+  return new Promise((resolve, reject) => {
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        console.warn(error);
+      }
+      resolve(stdout ? stdout : stderr);
+    });
+  });
+}
+
+export {
+  writeResultFile,
+  getFile,
+  getMappingItem,
+  getTotal,
+  getRank,
+  changeTorIP,
+};
