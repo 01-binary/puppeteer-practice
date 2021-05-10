@@ -62,7 +62,7 @@ typings/
 # Optional REPL history
 .node_repl_history
 
-.lotteimall_sampling_3000.tsv000
+*.tsv000
 
 # Output of 'npm pack'
 *.tgz
