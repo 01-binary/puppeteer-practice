@@ -16,8 +16,8 @@ import {
 } from "./util.js";
 
 const FILE_PATH = "./lotteimall_sampling_3000.tsv000";
-const TEST_NUMBER_START = 0;
-const TEST_NUMBER_END = 500;
+const TEST_NUMBER_START = 1000;
+const TEST_NUMBER_END = 1500;
 const inputs = getFile(FILE_PATH);
 const STAR_TEXT = "별점";
 
@@ -27,9 +27,10 @@ let result = [];
 // var rankAll = 0;
 
 (async () => {
-  const browser = await puppeteer.launch(
+  const browser = await puppeteer
+    .launch
     // { headless: false }
-    );
+    ();
   let page = await browser.newPage();
   // await page.setViewport({
   //   width: 1920,
@@ -46,7 +47,7 @@ let result = [];
     let res = await page.goto(searchURL);
     let chain = res.request().redirectChain();
 
-    await waiting(2500);
+    // await waiting(2500);
     while (chain?.length === 1) {
       console.log("Redirect Happen!".red);
       await waiting(20000);
@@ -56,12 +57,12 @@ let result = [];
 
     await autoScroll(page);
 
-    console.log(`${i+1} START! total ${TEST_NUMBER_END}`);
-    const searchResult = await getSearchData(page);
+    console.log(`${i + 1} START! total ${TEST_NUMBER_END}`);
+    const searchResult = await getSearchData(page, searchURL);
     resultObj.searchResult = searchResult;
 
     /* 각 페이지 크롤링 끝 */
-    console.log(`${i+1} END! total ${TEST_NUMBER_END}`);
+    console.log(`${i + 1} END! total ${TEST_NUMBER_END}`);
 
     result.push(resultObj);
   }
@@ -71,7 +72,7 @@ let result = [];
   console.log("End".blue);
 })();
 
-const getSearchData = async (page) => {
+const getSearchData = async (page, searchURL) => {
   //검색 페이지 입장
   let searchResultArr = [];
   let rankCount;
@@ -79,34 +80,39 @@ const getSearchData = async (page) => {
   let parsedScript;
   //script Parsing
   try {
-    parsedScript = await page.$eval(
-      "#__NEXT_DATA__",
-      (ele) => ele.textContent
-    );
+    parsedScript = await page.$eval("#__NEXT_DATA__", (ele) => ele.textContent);
     rankCount = await page.$eval(
       "#__next > div > div.style_container__1YjHN > div > div.style_content_wrap__1PzEo > div.style_content__2T20F > div.seller_filter_area > ul > li.active > a > span.subFilter_num__2x0jq",
       (ele) => ele.textContent
     );
   } catch (e) {
-      console.log("Result Not Found IN SearchData".red);
-      console.log("One More Call".red);
-      try {
-        parsedScript = await page.$eval(
-          "#__NEXT_DATA__",
-          (ele) => ele.textContent
-        );
-        rankCount = await page.$eval(
-          "#__next > div > div.style_container__1YjHN > div > div.style_content_wrap__1PzEo > div.style_content__2T20F > div.seller_filter_area > ul > li.active > a > span.subFilter_num__2x0jq",
-          (ele) => ele.textContent
-        );
-      } catch (e) {
-        console.log("Result Not Found".red);
-        searchResultArr = null;
-        return searchResultArr;
-      }
+    let res = await page.goto(searchURL);
+    let chain = res.request().redirectChain();
+    console.log("Result Not Found IN SearchData".red);
+    console.log("One More Call".red);
+    // await waiting(2500);
+    while (chain?.length === 1) {
+      console.log("Redirect Happen!".red);
+      await waiting(20000);
+      res = await page.goto(searchURL);
+      chain = res.request().redirectChain();
+    }
+
+    try {
+      parsedScript = await page.$eval(
+        "#__NEXT_DATA__",
+        (ele) => ele.textContent
+      );
+      rankCount = await page.$eval(
+        "#__next > div > div.style_container__1YjHN > div > div.style_content_wrap__1PzEo > div.style_content__2T20F > div.seller_filter_area > ul > li.active > a > span.subFilter_num__2x0jq",
+        (ele) => ele.textContent
+      );
+    } catch (e) {
+      console.log("Result Not Found".red);
+      searchResultArr = null;
+      return searchResultArr;
+    }
   }
-
-
 
   try {
     if (rankCount) {
