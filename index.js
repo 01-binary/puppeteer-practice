@@ -53,8 +53,13 @@ let result = [];
       await waiting(20000);
       res = await page.goto(searchURL);
       chain = res.request().redirectChain();
+      if(chain[0].url().includes("https://nid.naver.com/nidlogin.login")) break;
     }
-
+    if(chain[0].url().includes("https://nid.naver.com/nidlogin.login")) {
+      console.log("19세".red);
+      resultObj.searchResult = null;
+      continue;
+    }
     await autoScroll(page);
 
     console.log(`${i + 1} START! total ${TEST_NUMBER_END}`);
