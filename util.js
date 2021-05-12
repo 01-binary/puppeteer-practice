@@ -36,7 +36,7 @@ const getMappingItem = async (item, i) => {
     (obj, key) => ({ ...obj, [key]: item[key] }),
     {}
   );
-
+  mapped.imgSize = parseInt(IMG_SIZE);
   if (item?.imageUrl) {
     const imgRGB = await covertImageToRGb(item.imageUrl + "?type=f" + IMG_SIZE);
     // console.log(i, item.imageUrl + "?type=f" + IMG_SIZE);
@@ -60,18 +60,10 @@ const covertImageToRGb = async (imgUrl) => {
         image.bitmap.width,
         image.bitmap.height,
         function (x, y, idx) {
-          // x, y is the position of this pixel on the image
-          // idx is the position start position of this rgba tuple in the bitmap Buffer
-          // this is the image
-
-          const red = this.bitmap.data[idx + 0];
-          const green = this.bitmap.data[idx + 1];
-          const blue = this.bitmap.data[idx + 2];
-          const alpha = this.bitmap.data[idx + 3];
-
-          // rgba values run from 0 - 255
           // e.g. this.bitmap.data[idx] = 0; // removes red from this pixel
-          imgRGB.push([red, green, blue]);
+          imgRGB.push([
+            image.getPixelColor(x, y).toString(16).toUpperCase().slice(0, 6),
+          ]);
         }
       );
     })
@@ -102,8 +94,10 @@ const changeTorIP = async () => {
   // await shell.exec("brew services restart tor");
   // await execShellCommand("brew services restart tor");
   try {
-    let res= await asyncExec("brew services restart tor");
-    let ip = await asyncExec("curl -s --socks5-hostname 127.0.0.1:9050 https://api.myip.com");
+    let res = await asyncExec("brew services restart tor");
+    let ip = await asyncExec(
+      "curl -s --socks5-hostname 127.0.0.1:9050 https://api.myip.com"
+    );
     console.log("IP Changed", res, ip);
   } catch (e) {
     console.error("IP Change Error");
@@ -145,6 +139,36 @@ function execShellCommand(cmd) {
   });
 }
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waiting = async (time = 3000, logFlag = false) => {
+  await delay(time);
+  if (logFlag) {
+    console.log("Waiting Done!".yellow);
+  }
+};
+
+const insertReviewData = (searchResultArr, rank, reviewList) => {
+  for (let i = 0; i < searchResultArr.length; ++i) {
+    if (searchResultArr[i].rank === rank) {
+      searchResultArr[i].reviewList = reviewList;
+    }
+  }
+  return searchResultArr;
+};
+
+const getFilteredReview = (reviewList) => {
+  let filtered = reviewList?.map((obj, i) => {
+    let { content } = obj;
+    content = content.replace(/<em>/g, "");
+    content = content.replace(/<\/em>/g, "");
+    content = content.replace(/<br>/g, "");
+
+    return content;
+  });
+  return filtered;
+};
+
 export {
   writeResultFile,
   getFile,
@@ -152,4 +176,8 @@ export {
   getTotal,
   getRank,
   changeTorIP,
+  delay,
+  waiting,
+  insertReviewData,
+  getFilteredReview,
 };
