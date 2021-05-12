@@ -16,7 +16,7 @@ import {
 } from "./util.js";
 
 const FILE_PATH = "./lotteimall_sampling_3000.tsv000";
-const TEST_NUMBER_START = 1000;
+const TEST_NUMBER_START = 1036;
 const TEST_NUMBER_END = 1500;
 const inputs = getFile(FILE_PATH);
 const STAR_TEXT = "별점";
@@ -46,18 +46,23 @@ let result = [];
 
     let res = await page.goto(searchURL);
     let chain = res.request().redirectChain();
-
+    let checkAdult;
     // await waiting(2500);
     while (chain?.length === 1) {
       console.log("Redirect Happen!".red);
       await waiting(20000);
       res = await page.goto(searchURL);
       chain = res.request().redirectChain();
-      if(chain[0].url().includes("https://nid.naver.com/nidlogin.login")) break;
+      checkAdult = await page.$eval(
+        "#content > div.title > p",
+        (ele) => ele.textContent
+      );
+      if(checkAdult?.includes("Age")) break;
     }
-    if(chain[0].url().includes("https://nid.naver.com/nidlogin.login")) {
+    if(checkAdult?.includes("Age")) {
       console.log("19세".red);
       resultObj.searchResult = null;
+      result.push(resultObj);
       continue;
     }
     await autoScroll(page);
