@@ -13,7 +13,7 @@ import getSearchData from "./search.js";
 
 const FILE_PATH = "./lotteimall_sampling_3000.tsv000";
 const TEST_NUMBER_START = 2460;
-const TEST_NUMBER_END = 2472;
+const TEST_NUMBER_END = 2465;
 const inputs = getFile(FILE_PATH);
 
 let result = [];
