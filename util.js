@@ -1,10 +1,6 @@
 import fs from "fs";
 import Jimp from "jimp";
-// import shell from "shelljs";
-import util from "util";
-import { exec } from "child_process";
-
-const asyncExec = util.promisify(exec);
+import axios from "axios";
 
 const filteredKeys = [
   "rank",
@@ -31,7 +27,7 @@ const filteredKeys = [
 const IMG_SIZE = "40";
 const MAX_ITEM_SIZE = 40;
 
-const getMappingItem = async (item, i) => {
+const getMappingItem = async (item) => {
   const mapped = filteredKeys.reduce(
     (obj, key) => ({ ...obj, [key]: item[key] }),
     {}
@@ -39,9 +35,7 @@ const getMappingItem = async (item, i) => {
   mapped.imgSize = parseInt(IMG_SIZE);
   if (item?.imageUrl) {
     const imgRGB = await covertImageToRGb(item.imageUrl + "?type=f" + IMG_SIZE);
-    // console.log(i, item.imageUrl + "?type=f" + IMG_SIZE);
     mapped.imgRGB = imgRGB;
-    // mapped.imgRGB = null;
   } else {
     console.error("imageUrl not found");
     mapped.imgRGB = null;
@@ -60,7 +54,6 @@ const covertImageToRGb = async (imgUrl) => {
         image.bitmap.width,
         image.bitmap.height,
         function (x, y, idx) {
-          // e.g. this.bitmap.data[idx] = 0; // removes red from this pixel
           imgRGB.push([
             image.getPixelColor(x, y).toString(16).toUpperCase().slice(0, 6),
           ]);
@@ -68,7 +61,7 @@ const covertImageToRGb = async (imgUrl) => {
       );
     })
     .catch((err) => {
-      console.error("img convert error, ", err);
+      console.error("img convert error");
       imgRGB = [];
     });
 
@@ -88,20 +81,6 @@ const tsvToJSON = (tsv_string) => {
     jsonArray.push(obj);
   }
   return jsonArray;
-};
-
-const changeTorIP = async () => {
-  // await shell.exec("brew services restart tor");
-  // await execShellCommand("brew services restart tor");
-  try {
-    let res = await asyncExec("brew services restart tor");
-    let ip = await asyncExec(
-      "curl -s --socks5-hostname 127.0.0.1:9050 https://api.myip.com"
-    );
-    console.log("IP Changed", res, ip);
-  } catch (e) {
-    console.error("IP Change Error");
-  }
 };
 
 const getFile = (file_path) => {
@@ -126,18 +105,6 @@ const getRank = (rank) => {
   let _rank = rank.replace(/,/g, "");
   return parseInt(_rank) > 40 ? 40 : parseInt(_rank);
 };
-
-function execShellCommand(cmd) {
-  const exec = require("child_process").exec;
-  return new Promise((resolve, reject) => {
-    exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        console.warn(error);
-      }
-      resolve(stdout ? stdout : stderr);
-    });
-  });
-}
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -169,15 +136,116 @@ const getFilteredReview = (reviewList) => {
   return filtered;
 };
 
+const getPageSearchScript = async (page) => {
+  let _parsedScript = await page.$eval(
+    "#__NEXT_DATA__",
+    (ele) => ele.textContent
+  );
+
+  return _parsedScript;
+};
+
+const getPageSearchRankCount = async (page) => {
+  let _rankCount = await page.$eval(
+    "#__next > div > div.style_container__1YjHN > div > div.style_content_wrap__1PzEo > div.style_content__2T20F > div.seller_filter_area > ul > li.active > a > span.subFilter_num__2x0jq",
+    (ele) => ele.textContent
+  );
+
+  return _rankCount;
+};
+
+const getAdultText = async (page) => {
+  let _checkAdult = await page.$eval(
+    "#content > div.title > p",
+    (ele) => ele.textContent
+  );
+
+  return _checkAdult;
+}
+
+const getStar = async (page, i) => {
+  let _checkStar = await page.$eval(
+    //ui는 1부터 시작이라 i+1
+    `#__next > div > div.style_container__1YjHN > div > div.style_content_wrap__1PzEo > div.style_content__2T20F > ul > div > div:nth-child(${
+      i + 1
+    }) > li > div > div.basicList_info_area__17Xyo > div.basicList_etc_box__1Jzg6 > a > span > span`,
+    (ele) => ele.textContent
+  );
+
+  return _checkStar;
+}
+
+const getRawReviews = async (itemID, pageNum) => {
+  return await axios.get(
+    `https://search.shopping.naver.com/api/review?nvMid=${
+      itemID
+    }&reviewType=ALL&sort=QUALITY&isNeedAggregation=N&isApplyFilter=N&page=${pageNum}&pageSize=30`
+  );
+}
+
+const getSearchURL = (itemName) => {
+  return `https://search.shopping.naver.com/search/all?query=${itemName}`;
+}
+
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    await new Promise((resolve, reject) => {
+      let totalHeight = 0;
+      const distance = 400;
+      const timer = setInterval(() => {
+        const scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        if (totalHeight >= scrollHeight) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 100);
+    });
+  });
+}
+// const changeTorIP = async () => {
+//   // await shell.exec("brew services restart tor");
+//   // await execShellCommand("brew services restart tor");
+//   try {
+//     let res = await asyncExec("brew services restart tor");
+//     let ip = await asyncExec(
+//       "curl -s --socks5-hostname 127.0.0.1:9050 https://api.myip.com"
+//     );
+//     console.log("IP Changed", res, ip);
+//   } catch (e) {
+//     console.error("IP Change Error");
+//   }
+// };
+
+// function execShellCommand(cmd) {
+//   const exec = require("child_process").exec;
+//   return new Promise((resolve, reject) => {
+//     exec(cmd, (error, stdout, stderr) => {
+//       if (error) {
+//         console.warn(error);
+//       }
+//       resolve(stdout ? stdout : stderr);
+//     });
+//   });
+// }
+
 export {
   writeResultFile,
   getFile,
   getMappingItem,
   getTotal,
   getRank,
-  changeTorIP,
   delay,
   waiting,
   insertReviewData,
   getFilteredReview,
+  getPageSearchScript,
+  getPageSearchRankCount,
+  getAdultText,
+  getStar,
+  getRawReviews,
+  autoScroll,
+  getSearchURL
 };
