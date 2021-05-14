@@ -10,6 +10,7 @@ import {
   getPageSearchRankCount,
   getStar,
   getRawReviews,
+  autoScroll
 } from "./util.js";
 const STAR_TEXT = "별점";
 const REVIEW_BLOCK_TEXT = "Too many requests, please try again later.";
@@ -26,16 +27,19 @@ const getSearchData = async (page, searchURL) => {
     parsedScript = await getPageSearchScript(page);
     rankCount = await getPageSearchRankCount(page);
   } catch (e) {
+    await waiting(2000);
     let res = await page.goto(searchURL);
     let chain = res.request().redirectChain();
     console.log("Result Not Found IN SearchData".red);
     console.log("One More Call".red);
+    await autoScroll(page);
 
     while (chain?.length === 1) {
       console.log("Redirect Happen!".red);
       await waiting(20000);
       res = await page.goto(searchURL);
       chain = res.request().redirectChain();
+      await autoScroll(page);
     }
 
     try {

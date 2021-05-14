@@ -12,12 +12,11 @@ import {
 import getSearchData from "./search.js";
 
 const FILE_PATH = "./lotteimall_sampling_3000.tsv000";
-const TEST_NUMBER_START = 2460;
-const TEST_NUMBER_END = 2465;
+const TEST_NUMBER_START = 0;
+const TEST_NUMBER_END = 500;
 const inputs = getFile(FILE_PATH);
 
 let result = [];
-
 (async () => {
   const browser = await puppeteer.launch();
   let page = await browser.newPage();
@@ -27,8 +26,8 @@ let result = [];
 
     const searchURL = getSearchURL(inputs[i].itemName);
 
-    resultObj.itemName = inputs[i].itemName;
-    resultObj.itemID = inputs[i].itemID;
+    resultObj.itemName = inputs[i].itemName.replace(/"/g, "");
+    resultObj.itemID = inputs[i].itemID.replace(/"/g, "");
 
     let res = await page.goto(searchURL);
     let chain = res.request().redirectChain();
