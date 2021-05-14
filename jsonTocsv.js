@@ -1,5 +1,4 @@
 import fs from "fs";
-// import { writeToPath } from "fast-csv";
 import { Parser } from "json2csv";
 
 const FILE_PATH ="./result/";

@@ -126,12 +126,17 @@ const insertReviewData = (searchResultArr, rank, reviewList) => {
 
 const getFilteredReview = (reviewList) => {
   let filtered = reviewList?.map((obj, i) => {
-    let { content } = obj;
-    content = content.replace(/<em>/g, "");
-    content = content.replace(/<\/em>/g, "");
-    content = content.replace(/<br>/g, "");
+    let { title, content } = obj;
+    content = content
+      .replace(/<em>/g, "")
+      .replace(/<\/em>/g, "")
+      .replace(/<br>/g, " ");
+    title = title
+      .replace(/<em>/g, "")
+      .replace(/<\/em>/g, "")
+      .replace(/<br>/g, " ");
 
-    return content;
+    return { title, content };
   });
   return filtered;
 };
@@ -161,7 +166,7 @@ const getAdultText = async (page) => {
   );
 
   return _checkAdult;
-}
+};
 
 const getStar = async (page, i) => {
   let _checkStar = await page.$eval(
@@ -173,19 +178,17 @@ const getStar = async (page, i) => {
   );
 
   return _checkStar;
-}
+};
 
 const getRawReviews = async (itemID, pageNum) => {
   return await axios.get(
-    `https://search.shopping.naver.com/api/review?nvMid=${
-      itemID
-    }&reviewType=ALL&sort=QUALITY&isNeedAggregation=N&isApplyFilter=N&page=${pageNum}&pageSize=30`
+    `https://search.shopping.naver.com/api/review?nvMid=${itemID}&reviewType=ALL&sort=QUALITY&isNeedAggregation=N&isApplyFilter=N&page=${pageNum}&pageSize=30`
   );
-}
+};
 
 const getSearchURL = (itemName) => {
   return `https://search.shopping.naver.com/search/all?query=${itemName}`;
-}
+};
 
 async function autoScroll(page) {
   await page.evaluate(async () => {
@@ -247,5 +250,5 @@ export {
   getStar,
   getRawReviews,
   autoScroll,
-  getSearchURL
+  getSearchURL,
 };
