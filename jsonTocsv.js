@@ -1,7 +1,7 @@
 import fs from "fs";
 import { Parser } from "json2csv";
 
-const FILE_PATH ="./result/";
+const FILE_PATH ="./title_include/";
 
 for(let i = 1; i<=6; ++i) {
   const jsonFile = fs.readFileSync(FILE_PATH +`result${i}.json`, "utf8");
@@ -10,25 +10,30 @@ for(let i = 1; i<=6; ++i) {
   let output = [];
   jsonData.forEach((item) => {
     const itemName = item.itemName.replace(/"/g, "");
+    const itemID = item.itemID.replace(/"/g, "");
+
     const searchResult = item.searchResult;
     if (searchResult) {
       searchResult.forEach((arr) => {
         let obj = {
+          itemID: itemID,
           itemName: itemName,
           rank: arr.rank,
           productId: arr.id,
           productName: arr.productName,
           review_seq: "",
-          review: "",
+          review_title: "",
+          review_content: "",
         };
   
         if (arr.reviewList) {
           arr.reviewList?.forEach((review, i) => {
             let temp = { ...obj };
+            let review_title = review.title.replace(/\r/g, "").replace(/\n/g, "");
+            let review_content = review.content.replace(/\r/g, "").replace(/\n/g, "");
             temp.review_seq = i + 1;
-            review = review.replace(/\r/g, "");
-            review = review.replace(/\n/g, "");
-            temp.review = review;
+            temp.review_title = review_title;
+            temp.review_content = review_content;
             output.push(temp);
             // console.log(itemName, '|', arr.rank, '|', arr.id, '|', arr.productName, '|', i + 1, '|', review);
           });
@@ -39,12 +44,14 @@ for(let i = 1; i<=6; ++i) {
       });
     } else {
       let obj = {
-        itemName: itemName,
-        rank: "",
-        productId: "",
-        productName: "",
-        review_seq: "",
-        review: "",
+          itemID: itemID,
+          itemName: itemName,
+          rank: "",
+          productId: "",
+          productName: "",
+          review_seq: "",
+          review_title: "",
+          review_content: "",
       };
       output.push(obj);
     }

@@ -27,7 +27,7 @@ const getSearchData = async (page, searchURL) => {
     parsedScript = await getPageSearchScript(page);
     rankCount = await getPageSearchRankCount(page);
   } catch (e) {
-    await waiting(2000);
+    await waiting(5000);
     let res = await page.goto(searchURL);
     let chain = res.request().redirectChain();
     console.log("Result Not Found IN SearchData".red);
